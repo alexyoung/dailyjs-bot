@@ -8,6 +8,10 @@
 var irc = require('irc'),
     sys = require('sys'),
     fs = require('fs'),
+    http = require('http'),
+    net = {
+      url: require('url'),
+    },
     settings,
     mongoose = require('mongoose').Mongoose,
     client,
@@ -28,7 +32,7 @@ db = mongoose.connect(settings.mongo.uri);
 
 // DB models
 mongoose.model('Link', {
-  properties: ['url', 'nick', 'channel', 'server', 'updated_at', 'count'],
+  properties: ['url', 'title', 'nick', 'channel', 'server', 'updated_at', 'count'],
   methods: {
     save: function(fn) {
       this.updated_at = new Date();
@@ -65,6 +69,66 @@ LinkCatcher = {
     if (matches && matches.length > 0) {
       return matches[0];
     }
+  },
+
+  title: function(urlString, fn) {
+    var redirects = 0;
+
+    function get(urlString) {
+      if (redirects > 4) return;
+
+      var url = net.url.parse(urlString),
+          connection = http.createClient(url.port || 80, url.host, url.protocol === 'https:'),
+          request;
+
+      url.pathname = url.pathname || '/';
+      url.search = url.search || '';
+      request = connection.request('GET', url.pathname + url.search, {
+        'host': url.host,
+        'Accept-Ranges': '0..2046'
+      });
+
+      sys.puts('Fetching: ' + url.host + url.pathname + url.search);
+      request.end();
+      request.on('response', function(response) {
+        var data = '',
+            title = '',
+            ended = false;
+
+        if (response.statusCode >= 300 && response.statusCode < 400) {
+          redirects += 1;
+          sys.puts(sys.inspect(response));
+          request.end();
+          return get(response.headers.location, request);
+        }
+
+        response.on('data', function(chunk) {
+          if (ended) return;
+
+          data += chunk;
+
+          if (data.match(/<title>/)) {
+            title = data.match(/<title>([^<]*)<\/title>/);
+            if (title) {
+              fn(title[1]);
+              response.socket.end();
+              data = null;
+              ended = true;
+              return;
+            }
+          }
+
+          // I want to only download x bytes
+          if (data.length > 2046) {
+            sys.puts('ENDING REQUEST');
+            response.socket.end();
+            ended = true;
+          }
+        });
+      });
+    }
+
+    get(urlString);
   }
 };
 
@@ -98,6 +162,11 @@ client.addListener('message', function(from, to, message) {
         link.increment();
         client.say(settings.channel, 'Seen: ' + url + ' ' + link.count + ' times, posted by: ' + link.nick);
       }
+      LinkCatcher.title(url, function(title) {
+        link.title = title;
+        link.save();
+        client.say(settings.channel, 'Title: ' + title);
+      });
     });
   }
 });
