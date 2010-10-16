@@ -24,10 +24,7 @@ try {
   process.exit(1);
 }
 
-db = mongoose.connect('mongodb://'
-  + settings.mongo.server
-  + '/'
-  + settings.mongo.database);
+db = mongoose.connect(settings.mongo.uri);
 
 // DB models
 mongoose.model('Link', {

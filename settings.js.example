@@ -5,11 +5,7 @@ settings = {
   nick: 'djsbot',
 
   mongo: {
-    port: '27017',
-    server: 'localhost',
-    database: 'dailyjs',
-    username: null,
-    password: null
+    uri: 'mongodb://<user>:<password>@example.com:27081/db'
   }
 };
 
