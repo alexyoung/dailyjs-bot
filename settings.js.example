@@ -1,0 +1,15 @@
+// Settings
+settings = {
+  server: 'irc.freenode.net',
+  channel: '#dailyjs',
+  nick: 'djsbot',
+
+  mongo: {
+    port: '27017',
+    server: 'localhost',
+    database: 'dailyjs',
+    username: null,
+    password: null
+  }
+};
+

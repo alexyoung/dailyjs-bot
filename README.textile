@@ -1,0 +1,15 @@
+Logs messages to Mongo and catches links, for irc.freenode.net, #dailyjs.
+
+h3. Requirements
+
+* "Mongoose":http://github.com/LearnBoost/mongoose
+* "Node IRC":http://github.com/martynsmith/node-irc
+
+h3. Installation
+
+Copy settings.js.example to settings.js and edit the settings.
+
+h3. Usage
+
+At some point I'll add privmsg help and link searching, and help for that will appear here.
+
