@@ -152,11 +152,12 @@ client.addListener('message', function(from, to, message) {
   if (url = LinkCatcher.match(message)) {
     Link.find({ url: url }).first(function(link) {
       if (!link) {
-        (new Link({ url: url,
-                    nick: from,
-                    channel: to,
-                    count: 1,
-                    server: settings.server })).save();
+        link = new Link({ url: url,
+                          nick: from,
+                          channel: to,
+                          count: 1,
+                          server: settings.server });
+        link.save();
         client.say(settings.channel, 'Saving link: ' + url);
       } else {
         link.increment();
