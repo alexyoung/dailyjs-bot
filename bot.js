@@ -22,7 +22,7 @@ var irc = require('irc'),
     Message;
 
 try {
-  eval(fs.readFileSync('settings.js').toString());
+  settings = JSON.parse(fs.readFileSync('settings.js').toString());
 } catch (exception) {
   sys.puts('Please ensure you have a valid settings.js file.');
   process.exit(1);

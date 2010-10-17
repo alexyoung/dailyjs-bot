@@ -1,11 +1,9 @@
-// Settings
-settings = {
-  server: 'irc.freenode.net',
-  channel: '#dailyjs',
-  nick: 'djsbot',
+{ "server": "irc.fa.gs",
+  "channel": "#test",
+  "nick": "djsbot",
 
-  mongo: {
-    uri: 'mongodb://<user>:<password>@example.com:27081/db'
+  "mongo": {
+    "uri": "mongodb://localhost:27017/db"
   }
-};
+}
 
