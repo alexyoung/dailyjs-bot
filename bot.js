@@ -18,6 +18,7 @@ var irc = require('irc'),
     LinkCatcher,
     settings,
     db,
+    Commands,
     Link,
     Message;
 
@@ -97,7 +98,6 @@ LinkCatcher = {
 
         if (response.statusCode >= 300 && response.statusCode < 400) {
           redirects += 1;
-          sys.puts(sys.inspect(response));
           request.end();
           return get(response.headers.location, request);
         }
@@ -120,7 +120,6 @@ LinkCatcher = {
 
           // I want to only download x bytes
           if (data.length > 2046) {
-            sys.puts('ENDING REQUEST');
             response.socket.end();
             ended = true;
           }
@@ -132,6 +131,44 @@ LinkCatcher = {
   }
 };
 
+// IRC commands
+Commands = {
+  publicCommands: ['search', 'help'],
+
+  match: function(text) {
+    for (var i = 0; i < this.publicCommands.length; i++) {
+      var command = this.publicCommands[i],
+          matches = text.split(new RegExp('^`(' + command + ')\\s+(.*)', 'i'));
+
+      if (matches && matches.length > 1) {
+        return { name: matches[1], args: matches[2] };
+      }
+
+      matches = text.split(new RegExp('^`(' + command + ')', 'i'));
+      if (matches.length > 1) {
+        return { name: matches[1], args: null };
+      }
+    }
+  },
+
+  search: function(commandSpec, from, to, message) {
+    if (!commandSpec.args) return;
+
+    // I can't get Mongoose to do '$or' for some reason
+    Link.find({ title: (new RegExp(commandSpec.args, 'i')) })
+        .limit(4)
+        .all(function(result) {
+      result.forEach(function(link) {
+        client.say(settings.channel, 'Found link: ' + link.url);
+      });
+    });
+  },
+
+  help: function(commandSpec, to, from, message) {
+    client.say(settings.channel, 'I can only do `search phrase right now because Alex sucks');
+  }
+};
+
 // IRC client
 client = new irc.Client(settings.server, 'djsbot', {
     channels: [settings.channel],
@@ -139,6 +176,13 @@ client = new irc.Client(settings.server, 'djsbot', {
 
 client.addListener('raw', function(message) {
   sys.puts(message.command + ' '  + message.args.join(','));
+});
+
+client.addListener('message', function(from, to, message) {
+  var commandSpec;
+  if (commandSpec = Commands.match(message)) {
+    Commands[commandSpec.name](commandSpec, from, to, message);
+  }
 });
 
 client.addListener('message', function(from, to, message) {
