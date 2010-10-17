@@ -157,10 +157,15 @@ Commands = {
     // I can't get Mongoose to do '$or' for some reason
     Link.find({ title: (new RegExp(commandSpec.args, 'i')) })
         .limit(4)
+        .sort('updated_at', 1)
         .all(function(result) {
       result.forEach(function(link) {
         client.say(settings.channel, 'Found link: ' + link.url);
       });
+
+      if (result.length === 0) {
+        client.say(settings.channel, 'No matches found');
+      }
     });
   },
 
